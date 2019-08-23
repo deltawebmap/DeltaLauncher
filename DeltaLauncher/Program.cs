@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -11,7 +12,7 @@ namespace DeltaLauncher
 {
     class Program
     {
-        public const float LAUNCHER_VERSION = 1.0f;
+        public const float LAUNCHER_VERSION = 1.1f;
         public const string LAUNCHER_CHANNEL = "prod";
 
         public static Process server;
@@ -28,11 +29,11 @@ namespace DeltaLauncher
 
             //Get our pathnames and create them if they don't exist
             string root = GetRootPathname();
-            string content = Path.Combine(GetRootPathname(), "content\\");
-            string saved = Path.Combine(content, "saved\\");
-            string app_saved = Path.Combine(saved, "app\\");
-            string app_bin = Path.Combine(content, "bin\\");
-            string release_metadata_path = Path.Combine(saved, "release_metadata.json");
+            string content = CombinePath(GetRootPathname(), "content", true);
+            string saved = CombinePath(content, "saved", true);
+            string app_saved = CombinePath(saved, "app", true);
+            string app_bin = CombinePath(content, "bin", true);
+            string release_metadata_path = CombinePath(saved, "release_metadata.json", false);
             MakePathIfNotExist(content);
             MakePathIfNotExist(saved);
             MakePathIfNotExist(app_saved);
@@ -96,8 +97,8 @@ namespace DeltaLauncher
             {
                 launcher_version = (int)LAUNCHER_VERSION,
                 launcher_channel = LAUNCHER_CHANNEL,
-                path_config = Path.Combine(app_saved, "config.json"),
-                path_db = Path.Combine(app_saved, "database.db"),
+                path_config = CombinePath(app_saved, "config.json", false),
+                path_db = CombinePath(app_saved, "database.db", false),
                 path_root = app_saved
             };
 
@@ -120,6 +121,17 @@ namespace DeltaLauncher
             });
             Console.Title = $"Delta Web Map Server - v{metadata.version_major}.{metadata.version_minor}";
             return server;
+        }
+
+        public static string CombinePath(string a1, string a2, bool isDirectory)
+        {
+            string s = "/";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                s = "\\";
+            string o = a1 + a2;
+            if (isDirectory)
+                o += s;
+            return o;
         }
 
         public static LauncherRemoteConfig DownloadConfigFile()
